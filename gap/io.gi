@@ -60,11 +60,15 @@ InstallMethod( ViewObj, "for an IO_Result",
 
 # Store a list of open files, so we can close them on GAP exit
 # To ensure all streams are flushed
-IO.OpenFiles := Set([]);
+IO_OpenFiles := Set([]);
+ShareSpecialObj(IO_OpenFiles);
 InstallAtExit(function()
   local file;
-  for file in IO.OpenFiles do
-      IO_Close(file);
+  atomic IO_OpenFiles do
+    for file in IO_OpenFiles do
+        IO_Close(file);
+    od;
+    IO_OpenFiles := Set([]);
   od;
 end
 );
@@ -112,7 +116,9 @@ InstallGlobalFunction(IO_WrapFD,function(fd,rbuf,wbuf)
       fi;
   fi;
   fileObj := Objectify(FileType, f);
-  AddSet(IO.OpenFiles, fileObj);
+  atomic IO_OpenFiles do
+    AddSet(IO_OpenFiles, fileObj);
+  od;
   return fileObj;
 end );
 
@@ -209,7 +215,9 @@ InstallGlobalFunction( IO_Close, function( f )
   if f!.closed then
       Error("Cannot close closed file");
   fi;
-  RemoveSet(IO.OpenFiles, f);
+  atomic IO_OpenFiles do
+    RemoveSet(IO_OpenFiles, f);
+  od;
   # First flush if necessary:
   ret := true;
   if f!.wbufsize <> false and f!.wdata <> 0 then

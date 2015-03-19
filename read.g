@@ -24,6 +24,9 @@ if IsBound(IO_PkgThingsToRead) then
     Unbind(IO_PkgThingsToRead);
 fi;
 
+IO := `IO;
+MakeReadOnlyGlobal("IO");
+
 ##
 ##  This program is free software: you can redistribute it and/or modify
 ##  it under the terms of the GNU General Public License as published by

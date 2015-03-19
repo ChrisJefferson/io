@@ -3034,7 +3034,6 @@ static Int InitLibrary ( StructInitInfo *module )
     gvar = GVarName("IO");
     MakeReadWriteGVar( gvar);
     AssGVar( gvar, tmp );
-    MakeReadOnlyGVar(gvar);
     /* return success                                                      */
     return 0;
 }
