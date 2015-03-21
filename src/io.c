@@ -124,6 +124,7 @@ void __stack_chk_fail_local (void)
  *   fcntl? (for file locking purposes), recvmsg, sendmsg,
  */
 
+#ifndef HPCGAP
 /***********************************************************************
  * First we have our own SIGCHLD handler. It is a copy of the one in the
  * GAP kernel, however, information about all children that are not
@@ -140,8 +141,10 @@ static int fistats = 0;            /* First used entry */
 static int lastats = 0;            /* First unused entry */
 static int statsfull = 0;          /* Flag, whether stats FIFO full */
 static RETSIGTYPE (*oldhandler)(int whichsig) = 0;  /* the old handler */
+#endif
 
 #ifdef HAVE_SIGNAL
+#ifndef HPCGAP
 RETSIGTYPE IO_SIGCHLDHandler( int whichsig )
 {
   int retcode,status;
@@ -268,6 +271,48 @@ Obj FuncIO_WaitPid(Obj self,Obj pid,Obj wait)
   signal(SIGCHLD,IO_SIGCHLDHandler);
   return tmp;
 }
+#else
+/* In HPC-GAP these methods do not do anything. They are left for now
+ * for backwards compatability */
+Obj FuncIO_InstallSIGCHLDHandler( Obj self )
+{ return True; }
+
+Obj FuncIO_RestoreSIGCHLDHandler( Obj self )
+{ return True; }
+
+Obj FuncIO_WaitPid(Obj self,Obj pid,Obj wait)
+{
+  Int pidc;
+  int pos,newpos;
+  Obj tmp;
+  int retcode,status;
+  int reallytried;
+  if (!IS_INTOBJ(pid)) {
+      SyClearErrorNo();
+      return Fail;
+  }
+  
+  pidc = INT_INTOBJ(pid);
+  if(pidc < 1) {
+    SyClearErrorNo();
+    return Fail;
+  }
+  
+  if (wait == True)
+      retcode = waitpid(pidc, &status, 0);
+  else
+  {
+      retcode = waitpid(pidc, &status, WNOHANG);
+      if(retcode == 0)
+        return Fail;
+  }
+  
+  tmp = NEW_PREC(0);
+  AssPRec(tmp,RNamName("pid"),INTOBJ_INT(pid));
+  AssPRec(tmp,RNamName("status"),INTOBJ_INT(retcode));
+  return tmp;
+}
+#endif
 #endif
 
 Obj FuncIO_open(Obj self,Obj path,Obj flags,Obj mode)
