@@ -1868,6 +1868,17 @@ static Obj FuncIO_gethostname(Obj self)
 #endif
 
 
+#ifdef SYS_IS_CYGWIN32
+#include <windows.h>
+
+static Obj FuncIO_get_osfhandle(Obj self, Obj fd)
+{
+    if (!IS_INTOBJ(fd)) {
+        return Fail;
+    }
+    return ObjInt_Int8(_get_osfhandle(INT_INTOBJ(fd)));
+}
+#endif
 
 /*F * * * * * * * * * * * * * initialize package * * * * * * * * * * * * * * */
 
